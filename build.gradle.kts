@@ -40,6 +40,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.4.1")
     implementation("org.jetbrains.skiko:skiko-jvm-runtime-$target:$version")
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.2.1")
+    implementation("com.github.ajalt.clikt:clikt:3.3.0")
     testImplementation(kotlin("test"))
 }
 

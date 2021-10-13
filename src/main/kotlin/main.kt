@@ -10,16 +10,23 @@ import java.awt.event.MouseEvent
 import java.awt.event.MouseMotionAdapter
 import javax.swing.WindowConstants
 
-fun main() {
-    createWindow("pf-2021-viz")
+enum class ChartType { TODO() }
+
+data class ChartInfo(val chartType: ChartType, val data: List<Int>)
+
+fun parseInput(args: Array<String>): ChartInfo { TODO() }
+
+fun main(args: Array<String>) {
+    val input = parseInput(args)
+    createWindow("pf-2021-viz", input)
 }
 
-fun createWindow(title: String) = runBlocking(Dispatchers.Swing) {
+fun createWindow(title: String, chartInfo: ChartInfo) = runBlocking(Dispatchers.Swing) {
     val window = SkiaWindow()
     window.defaultCloseOperation = WindowConstants.DISPOSE_ON_CLOSE
     window.title = title
 
-    window.layer.renderer = Renderer(window.layer)
+    window.layer.renderer = Renderer(window.layer, chartInfo)
     window.layer.addMouseMotionListener(MyMouseMotionAdapter)
 
     window.preferredSize = Dimension(800, 600)
@@ -29,7 +36,7 @@ fun createWindow(title: String) = runBlocking(Dispatchers.Swing) {
     window.isVisible = true
 }
 
-class Renderer(val layer: SkiaLayer): SkiaRenderer {
+class Renderer(val layer: SkiaLayer, val chartInfo: ChartInfo): SkiaRenderer {
     val typeface = Typeface.makeFromFile("fonts/JetBrainsMono-Regular.ttf")
     val font = Font(typeface, 40f)
     val paint = Paint().apply {
@@ -44,7 +51,7 @@ class Renderer(val layer: SkiaLayer): SkiaRenderer {
         val w = (width / contentScale).toInt()
         val h = (height / contentScale).toInt()
 
-        // РИСОВАНИЕ
+        TODO()
 
         layer.needRedraw()
     }

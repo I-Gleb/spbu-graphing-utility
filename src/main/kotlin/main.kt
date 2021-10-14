@@ -1,14 +1,9 @@
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.multiple
-import com.github.ajalt.clikt.parameters.arguments.pair
-import com.github.ajalt.clikt.parameters.groups.OptionGroup
-import com.github.ajalt.clikt.parameters.groups.cooccurring
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.option
-import com.github.ajalt.clikt.parameters.options.required
 import com.github.ajalt.clikt.parameters.types.enum
-import com.github.ajalt.clikt.parameters.types.int
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.swing.Swing
@@ -21,9 +16,19 @@ import java.awt.event.MouseEvent
 import java.awt.event.MouseMotionAdapter
 import javax.swing.WindowConstants
 
-enum class ChartType(val parser: (String) -> Element)
+enum class ChartType(val parser: (String) -> Element) {
+    BarChart({s ->
+        try {
+            val args = s.split(":")
+            Element(args[1].toInt(), args[0])
+        }
+        catch (e: Exception) {
+            throw TODO()
+        }
+    })
+}
 
-data class Element(val value: Int, val group_name: String?, val x: Int?)
+data class Element(val value: Int, val group_name: String? = null, val x: Int? = null)
 
 data class ChartData(val chartType: ChartType, val data: List<Element>, val title: String, val xLegend: String, val yLegend: String)
 

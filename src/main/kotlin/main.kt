@@ -1,8 +1,6 @@
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.multiple
-import com.github.ajalt.clikt.parameters.options.default
-import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.enum
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -12,12 +10,23 @@ import org.jetbrains.skiko.SkiaLayer
 import org.jetbrains.skiko.SkiaRenderer
 import org.jetbrains.skiko.SkiaWindow
 import java.awt.Dimension
-import java.awt.event.MouseEvent
-import java.awt.event.MouseMotionAdapter
+import java.lang.Integer.min
 import javax.swing.WindowConstants
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
 
 enum class ChartType(val parser: (String) -> Element) {
     BarChart({s ->
+        try {
+            val args = s.split(":")
+            Element(args[1].toInt(), args[0])
+        }
+        catch (e: Exception) {
+            throw TODO()
+        }
+    }),
+    PieChart({s ->
         try {
             val args = s.split(":")
             Element(args[1].toInt(), args[0])
@@ -30,21 +39,18 @@ enum class ChartType(val parser: (String) -> Element) {
 
 data class Element(val value: Int, val group_name: String? = null, val x: Int? = null)
 
-data class ChartData(val chartType: ChartType, val data: List<Element>, val title: String, val xLegend: String, val yLegend: String)
+data class ChartData(val chartType: ChartType, val data: List<Element>)
 
 class ChartOptionsParser : CliktCommand() {
     val chartType by argument().enum<ChartType>(ignoreCase = true)
     val data by argument().multiple(required = true)
-    val title by option().default("")
-    val xLegend by option().default("")
-    val yLegend by option().default("")
     override fun run() = Unit
 }
 
 fun parseInput(args: Array<String>): ChartData {
     val myParser = ChartOptionsParser()
     myParser.main(args)
-    return ChartData(myParser.chartType, myParser.data.map { myParser.chartType.parser(it) }, myParser.title, myParser.xLegend, myParser.yLegend)
+    return ChartData(myParser.chartType, myParser.data.map { myParser.chartType.parser(it) })
 }
 
 fun main(args: Array<String>) {
@@ -58,7 +64,6 @@ fun createWindow(title: String, chartInfo: ChartData) = runBlocking(Dispatchers.
     window.title = title
 
     window.layer.renderer = Renderer(window.layer, chartInfo)
-    window.layer.addMouseMotionListener(MyMouseMotionAdapter)
 
     window.preferredSize = Dimension(800, 600)
     window.minimumSize = Dimension(100,100)
@@ -69,12 +74,8 @@ fun createWindow(title: String, chartInfo: ChartData) = runBlocking(Dispatchers.
 
 class Renderer(val layer: SkiaLayer, val chartInfo: ChartData): SkiaRenderer {
     val typeface = Typeface.makeFromFile("fonts/JetBrainsMono-Regular.ttf")
-    val font = Font(typeface, 40f)
-    val paint = Paint().apply {
-        color = 0xff9BC730L.toInt()
-        mode = PaintMode.FILL
-        strokeWidth = 1f
-    }
+    val indent = 5
+    val blackColor = 0xff000000L.toInt()
 
     override fun onRender(canvas: Canvas, width: Int, height: Int, nanoTime: Long) {
         val contentScale = layer.contentScale
@@ -82,20 +83,58 @@ class Renderer(val layer: SkiaLayer, val chartInfo: ChartData): SkiaRenderer {
         val w = (width / contentScale).toInt()
         val h = (height / contentScale).toInt()
 
-        TODO()
+        when (chartInfo.chartType) {
+            ChartType.BarChart -> drawBarChart(canvas, w, h)
+            ChartType.PieChart -> drawPieChart(canvas, w, h)
+        }
 
         layer.needRedraw()
     }
-}
 
-object State {
-    var mouseX = 0f
-    var mouseY = 0f
-}
+    private fun drawBarChart(canvas: Canvas, width: Int, height: Int) {
+        TODO()
+    }
 
-object MyMouseMotionAdapter : MouseMotionAdapter() {
-    override fun mouseMoved(event: MouseEvent) {
-        State.mouseX = event.x.toFloat()
-        State.mouseY = event.y.toFloat()
+    private fun drawPieChart(canvas: Canvas, width: Int, height: Int) {
+
+        fun degreesToRadians(x: Float): Double {
+            return x * PI / 180
+        }
+
+        val signFont = Font(typeface, 20f)
+
+        val centerX = width / 2f
+        val centerY = height / 2f
+        val radius = min(width, height) / 2f - indent
+
+        val left = centerX - radius
+        val right = centerX + radius
+        val top = centerY - radius
+        val bottom = centerY + radius
+
+        fun drawSector(startAng: Float, deltaAng: Float) {
+            canvas.drawArc(left, top, right, bottom, startAng, deltaAng, true,
+                Paint().apply { color = blackColor; mode = PaintMode.STROKE })
+        }
+
+        fun drawSign(startAng: Float, deltaAng: Float, s: String) {
+            val signAng = degreesToRadians(startAng + deltaAng / 2)
+            val signX = centerX + cos(-signAng).toFloat() * radius / 2 - signFont.measureTextWidth(s) / 2
+            val signY = centerY - sin(-signAng).toFloat() * radius / 2 + signFont.size / 2f
+            canvas.drawString(s, signX, signY, signFont,
+                Paint().apply { color = blackColor; mode = PaintMode.STROKE_AND_FILL })
+        }
+
+        val sum = chartInfo.data.sumOf { it.value }
+        var currStart = 0f
+
+        chartInfo.data.forEach {
+            val deltaAng = it.value * 360f / sum
+
+            drawSector(currStart, deltaAng)
+            drawSign(currStart, deltaAng, it.group_name!!)
+
+            currStart += deltaAng
+        }
     }
 }

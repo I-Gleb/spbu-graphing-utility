@@ -2,6 +2,7 @@ import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.multiple
 import com.github.ajalt.clikt.parameters.types.enum
+import com.github.ajalt.clikt.parameters.types.file
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.swing.Swing
@@ -9,8 +10,12 @@ import org.jetbrains.skija.*
 import org.jetbrains.skiko.SkiaLayer
 import org.jetbrains.skiko.SkiaRenderer
 import org.jetbrains.skiko.SkiaWindow
+import org.jetbrains.skiko.toBufferedImage
 import java.awt.Dimension
+import java.io.File
 import java.lang.Float.min
+import java.lang.constant.ClassDesc.of
+import javax.imageio.ImageIO
 import javax.swing.WindowConstants
 import kotlin.math.PI
 import kotlin.math.cos
@@ -39,18 +44,19 @@ enum class ChartType(val parser: (String) -> Element) {
 
 data class Element(val value: Int, val group_name: String? = null, val x: Int? = null)
 
-data class ChartData(val chartType: ChartType, val data: List<Element>)
+data class ChartData(val chartType: ChartType, val data: List<Element>, val fileOut: File)
 
 class ChartOptionsParser : CliktCommand() {
     val chartType by argument().enum<ChartType>(ignoreCase = true)
     val data by argument().multiple(required = true)
+    val fileOut by argument().file(canBeDir = false)
     override fun run() = Unit
 }
 
 fun parseInput(args: Array<String>): ChartData {
     val myParser = ChartOptionsParser()
     myParser.main(args)
-    return ChartData(myParser.chartType, myParser.data.map { myParser.chartType.parser(it) })
+    return ChartData(myParser.chartType, myParser.data.map { myParser.chartType.parser(it) }, myParser.fileOut)
 }
 
 fun main(args: Array<String>) {
@@ -70,6 +76,10 @@ fun createWindow(title: String, chartInfo: ChartData) = runBlocking(Dispatchers.
     window.pack()
     window.layer.awaitRedraw()
     window.isVisible = true
+
+    //saving chart to file
+    val image = window.layer.screenshot()?.toBufferedImage()
+    ImageIO.write(image, "png", chartInfo.fileOut)
 }
 
 class Renderer(val layer: SkiaLayer, val chartInfo: ChartData): SkiaRenderer {

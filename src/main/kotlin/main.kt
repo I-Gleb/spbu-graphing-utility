@@ -1,6 +1,5 @@
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.arguments.argument
-import com.github.ajalt.clikt.parameters.arguments.multiple
 import com.github.ajalt.clikt.parameters.types.enum
 import com.github.ajalt.clikt.parameters.types.file
 import kotlinx.coroutines.Dispatchers
@@ -14,12 +13,12 @@ import org.jetbrains.skiko.toBufferedImage
 import java.awt.Dimension
 import java.io.File
 import java.lang.Float.min
-import java.lang.constant.ClassDesc.of
 import javax.imageio.ImageIO
 import javax.swing.WindowConstants
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
+import kotlin.random.Random
 
 enum class ChartType(val parser: (String) -> Element) {
     BarChart({s ->
@@ -103,6 +102,10 @@ class Renderer(val layer: SkiaLayer, val chartInfo: ChartData): SkiaRenderer {
         layer.needRedraw()
     }
 
+    private fun randomColor(seed: Int): Int {
+        return 0xff000000L.toInt() + (0 until 256 * 256 * 256).random(Random(seed))
+    }
+
     private fun drawBarChart(canvas: Canvas, width: Float, height: Float) {
 
         val smallIndent = 10f
@@ -132,7 +135,7 @@ class Renderer(val layer: SkiaLayer, val chartInfo: ChartData): SkiaRenderer {
             currStart += bigIndent
 
             canvas.drawRect(Rect(currStart, bottom - axePaint.strokeWidth - k * it.value, currStart + barWidth, bottom - axePaint.strokeWidth),
-                Paint().apply { color = blackColor; mode = PaintMode.STROKE})
+                Paint().apply { color = randomColor(currStart.toInt()); mode = PaintMode.STROKE_AND_FILL})
 
             canvas.drawString(it.group_name!!, currStart + (barWidth - signFont.measureTextWidth(it.group_name)) / 2, height - smallIndent, signFont, textPaint)
 
@@ -158,7 +161,7 @@ class Renderer(val layer: SkiaLayer, val chartInfo: ChartData): SkiaRenderer {
 
         fun drawSector(startAng: Float, deltaAng: Float) {
             canvas.drawArc(left, top, right, bottom, startAng, deltaAng, true,
-                Paint().apply { color = blackColor; mode = PaintMode.STROKE })
+                Paint().apply { color = randomColor(startAng.toInt()); mode = PaintMode.STROKE_AND_FILL })
         }
 
         fun drawSign(startAng: Float, deltaAng: Float, s: String) {

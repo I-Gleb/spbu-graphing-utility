@@ -85,7 +85,7 @@ class Renderer(val layer: SkiaLayer, val chartInfo: ChartData): SkiaRenderer {
     val typeface = Typeface.makeFromFile("fonts/JetBrainsMono-Regular.ttf")
     val signFont = Font(typeface, 20f)
     val blackColor = 0xff000000L.toInt()
-    val textPaint = Paint().apply { color = blackColor; mode = PaintMode.STROKE_AND_FILL }
+    val blackTextPaint = Paint().apply { color = blackColor; mode = PaintMode.STROKE_AND_FILL }
 
 
     override fun onRender(canvas: Canvas, width: Int, height: Int, nanoTime: Long) {
@@ -115,35 +115,29 @@ class Renderer(val layer: SkiaLayer, val chartInfo: ChartData): SkiaRenderer {
     private fun drawBarChart(canvas: Canvas, width: Float, height: Float) {
 
         val smallIndent = 10f
-        val axePaint = Paint().apply { color = blackColor; mode = PaintMode.STROKE_AND_FILL; strokeWidth = 2f}
 
         val left = smallIndent
         val right = width - smallIndent
         val top = smallIndent
-        val bottom = height - 2 * smallIndent - signFont.size
-
-        // draw axes
-        canvas.drawLine(left, top, left, bottom, axePaint)
-        canvas.drawLine(left, bottom, right,  bottom, axePaint)
-        canvas.drawLine(left, top, left - 5, top + 10, axePaint)
-        canvas.drawLine(left, top, left + 5, top + 10, axePaint)
-        canvas.drawLine(right,  bottom, right - 10,  bottom - 5, axePaint)
-        canvas.drawLine(right,  bottom, right - 10,  bottom + 5, axePaint)
+        val bottom = height - smallIndent
 
         val numberOfBars = chartInfo.data.size
         val bigIndent = 30f
-        val barWidth = (right - left - bigIndent - axePaint.strokeWidth) / numberOfBars - bigIndent
-        val k = (bottom - top - bigIndent - axePaint.strokeWidth) / chartInfo.data.maxOf { it.value }
+        val barWidth = (right - left - bigIndent) / numberOfBars - bigIndent
+        val k = (bottom - top - 2 * signFont.size - smallIndent) / chartInfo.data.maxOf { it.value }
 
         // draw bars and signs
-        var currStart = left + axePaint.strokeWidth
+        var currStart = left
         chartInfo.data.forEach {
             currStart += bigIndent
 
-            canvas.drawRect(Rect(currStart, bottom - axePaint.strokeWidth - k * it.value, currStart + barWidth, bottom - axePaint.strokeWidth),
+            canvas.drawRect(Rect(currStart, bottom - signFont.size - k * it.value, currStart + barWidth, bottom - signFont.size),
                 randomFillPaint(currStart.toInt()))
 
-            canvas.drawString(it.group_name!!, currStart + (barWidth - signFont.measureTextWidth(it.group_name)) / 2, height - smallIndent, signFont,
+            canvas.drawString(it.group_name!!, currStart + (barWidth - signFont.measureTextWidth(it.group_name)) / 2, bottom, signFont,
+                randomTextPaint(currStart.toInt()))
+
+            canvas.drawString(it.value.toString(), currStart + (barWidth - signFont.measureTextWidth(it.value.toString())) / 2, bottom - signFont.size - smallIndent - k * it.value, signFont,
                 randomTextPaint(currStart.toInt()))
 
             currStart += barWidth

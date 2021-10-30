@@ -48,7 +48,7 @@ data class ChartData(val chartType: ChartType, val data: List<Element>, val file
 
 class ChartOptionsParser : CliktCommand() {
     val chartType by argument().enum<ChartType>(ignoreCase = true)
-    val data by argument().multiple(required = true)
+    val data by argument().file(canBeDir = false, mustExist = true, mustBeReadable = true)
     val fileOut by argument().file(canBeDir = false)
     override fun run() = Unit
 }
@@ -56,7 +56,7 @@ class ChartOptionsParser : CliktCommand() {
 fun parseInput(args: Array<String>): ChartData {
     val myParser = ChartOptionsParser()
     myParser.main(args)
-    return ChartData(myParser.chartType, myParser.data.map { myParser.chartType.parser(it) }, myParser.fileOut)
+    return ChartData(myParser.chartType, myParser.data.readLines().map { myParser.chartType.parser(it) }, myParser.fileOut)
 }
 
 fun main(args: Array<String>) {

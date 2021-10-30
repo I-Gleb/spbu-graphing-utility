@@ -1,0 +1,3 @@
+wine:15
+rum:20
+soda:10

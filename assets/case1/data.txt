@@ -1,0 +1,4 @@
+projects:60
+practise:10
+essay:10
+other:20

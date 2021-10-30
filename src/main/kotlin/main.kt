@@ -102,8 +102,14 @@ class Renderer(val layer: SkiaLayer, val chartInfo: ChartData): SkiaRenderer {
         layer.needRedraw()
     }
 
-    private fun randomColor(seed: Int): Int {
-        return 0xff000000L.toInt() + (0 until 256 * 256 * 256).random(Random(seed))
+    private fun randomFillPaint(seed: Int): Paint {
+        val randomColor = 0x66000000L.toInt() + (0 until 256 * 256 * 256).random(Random(seed))
+        return Paint().apply { color = randomColor; mode = PaintMode.STROKE_AND_FILL}
+    }
+
+    private fun randomTextPaint(seed: Int): Paint {
+        val randomColor = 0xFF000000L.toInt() + (0 until 256 * 256 * 256).random(Random(seed))
+        return Paint().apply { color = randomColor; mode = PaintMode.STROKE_AND_FILL}
     }
 
     private fun drawBarChart(canvas: Canvas, width: Float, height: Float) {
@@ -135,9 +141,10 @@ class Renderer(val layer: SkiaLayer, val chartInfo: ChartData): SkiaRenderer {
             currStart += bigIndent
 
             canvas.drawRect(Rect(currStart, bottom - axePaint.strokeWidth - k * it.value, currStart + barWidth, bottom - axePaint.strokeWidth),
-                Paint().apply { color = randomColor(currStart.toInt()); mode = PaintMode.STROKE_AND_FILL})
+                randomFillPaint(currStart.toInt()))
 
-            canvas.drawString(it.group_name!!, currStart + (barWidth - signFont.measureTextWidth(it.group_name)) / 2, height - smallIndent, signFont, textPaint)
+            canvas.drawString(it.group_name!!, currStart + (barWidth - signFont.measureTextWidth(it.group_name)) / 2, height - smallIndent, signFont,
+                randomTextPaint(currStart.toInt()))
 
             currStart += barWidth
         }
@@ -161,14 +168,14 @@ class Renderer(val layer: SkiaLayer, val chartInfo: ChartData): SkiaRenderer {
 
         fun drawSector(startAng: Float, deltaAng: Float) {
             canvas.drawArc(left, top, right, bottom, startAng, deltaAng, true,
-                Paint().apply { color = randomColor(startAng.toInt()); mode = PaintMode.STROKE_AND_FILL })
+                randomFillPaint(startAng.toInt()))
         }
 
         fun drawSign(startAng: Float, deltaAng: Float, s: String) {
             val signAng = degreesToRadians(startAng + deltaAng / 2)
             val signX = centerX + cos(-signAng).toFloat() * radius / 2 - signFont.measureTextWidth(s) / 2
             val signY = centerY - sin(-signAng).toFloat() * radius / 2 + signFont.size / 2
-            canvas.drawString(s, signX, signY, signFont, textPaint)
+            canvas.drawString(s, signX, signY, signFont, randomTextPaint(startAng.toInt()))
         }
 
         val sum = chartInfo.data.sumOf { it.value }

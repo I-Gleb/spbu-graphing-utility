@@ -165,11 +165,19 @@ class Renderer(val layer: SkiaLayer, val chartInfo: ChartData): SkiaRenderer {
                 randomFillPaint(startAng.toInt()))
         }
 
-        fun drawSign(startAng: Float, deltaAng: Float, s: String) {
+        fun drawSign(startAng: Float, deltaAng: Float, name: String, value: String) {
             val signAng = degreesToRadians(startAng + deltaAng / 2)
-            val signX = centerX + cos(-signAng).toFloat() * radius / 2 - signFont.measureTextWidth(s) / 2
-            val signY = centerY - sin(-signAng).toFloat() * radius / 2 + signFont.size / 2
-            canvas.drawString(s, signX, signY, signFont, randomTextPaint(startAng.toInt()))
+
+            val signCenterX = centerX + cos(-signAng).toFloat() * radius / 2
+            val signCenterY = centerY - sin(-signAng).toFloat() * radius / 2
+
+            val nameX = signCenterX - signFont.measureText(name).width / 2
+            val nameY = signCenterY
+            canvas.drawString(name, nameX, nameY, signFont, randomTextPaint(startAng.toInt()))
+
+            val valueX = signCenterX - signFont.measureText(value).width / 2
+            val valueY = signCenterY + signFont.size
+            canvas.drawString(value, valueX, valueY, signFont, randomTextPaint(startAng.toInt()))
         }
 
         val sum = chartInfo.data.sumOf { it.value }
@@ -179,7 +187,7 @@ class Renderer(val layer: SkiaLayer, val chartInfo: ChartData): SkiaRenderer {
             val deltaAng = it.value * 360f / sum
 
             drawSector(currStart, deltaAng)
-            drawSign(currStart, deltaAng, it.group_name!!)
+            drawSign(currStart, deltaAng, it.group_name!!, it.value.toString())
 
             currStart += deltaAng
         }

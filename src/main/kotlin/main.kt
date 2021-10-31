@@ -12,11 +12,12 @@ import org.jetbrains.skiko.SkiaWindow
 import org.jetbrains.skiko.toBufferedImage
 import java.awt.Dimension
 import java.io.File
-import java.lang.Float.min
 import javax.imageio.ImageIO
 import javax.swing.WindowConstants
 import kotlin.math.PI
 import kotlin.math.cos
+import kotlin.math.min
+import kotlin.math.max
 import kotlin.math.sin
 import kotlin.random.Random
 
@@ -24,7 +25,7 @@ enum class ChartType(val parser: (String) -> Element) {
     BarChart({s ->
         try {
             val args = s.split(":")
-            Element(args[1].toInt(), args[0])
+            Element(args[1].toInt(), groupName=args[0])
         }
         catch (e: Exception) {
             throw TODO()
@@ -33,7 +34,16 @@ enum class ChartType(val parser: (String) -> Element) {
     PieChart({s ->
         try {
             val args = s.split(":")
-            Element(args[1].toInt(), args[0])
+            Element(args[1].toInt(), groupName=args[0])
+        }
+        catch (e: Exception) {
+            throw TODO()
+        }
+    }),
+    ScatterPlot({s ->
+        try {
+            val args = s.split(":")
+            Element(args[1].toInt(), x=args[0].toInt())
         }
         catch (e: Exception) {
             throw TODO()
@@ -41,7 +51,7 @@ enum class ChartType(val parser: (String) -> Element) {
     })
 }
 
-data class Element(val value: Int, val group_name: String? = null, val x: Int? = null)
+data class Element(val value: Int, val groupName: String = "", val x: Int = 0)
 
 data class ChartData(val chartType: ChartType, val data: List<Element>, val fileOut: File)
 
@@ -84,8 +94,6 @@ fun createWindow(title: String, chartInfo: ChartData) = runBlocking(Dispatchers.
 class Renderer(val layer: SkiaLayer, val chartInfo: ChartData): SkiaRenderer {
     val typeface = Typeface.makeFromFile("fonts/JetBrainsMono-Regular.ttf")
     val signFont = Font(typeface, 20f)
-    val blackColor = 0xff000000L.toInt()
-    val blackTextPaint = Paint().apply { color = blackColor; mode = PaintMode.STROKE_AND_FILL }
 
 
     override fun onRender(canvas: Canvas, width: Int, height: Int, nanoTime: Long) {
@@ -97,6 +105,7 @@ class Renderer(val layer: SkiaLayer, val chartInfo: ChartData): SkiaRenderer {
         when (chartInfo.chartType) {
             ChartType.BarChart -> drawBarChart(canvas, w, h)
             ChartType.PieChart -> drawPieChart(canvas, w, h)
+            ChartType.ScatterPlot -> drawScatterPlot(canvas, w, h)
         }
 
         layer.needRedraw()
@@ -126,17 +135,19 @@ class Renderer(val layer: SkiaLayer, val chartInfo: ChartData): SkiaRenderer {
         val barWidth = (right - left - bigIndent) / numberOfBars - bigIndent
         val k = (bottom - top - 2 * signFont.size - smallIndent) / chartInfo.data.maxOf { it.value }
 
-        // draw bars and signs
         var currStart = left
         chartInfo.data.forEach {
             currStart += bigIndent
 
+            // draw bar
             canvas.drawRect(Rect(currStart, bottom - signFont.size - k * it.value, currStart + barWidth, bottom - signFont.size),
                 randomFillPaint(currStart.toInt()))
 
-            canvas.drawString(it.group_name!!, currStart + (barWidth - signFont.measureTextWidth(it.group_name)) / 2, bottom, signFont,
+            // draw name
+            canvas.drawString(it.groupName, currStart + (barWidth - signFont.measureTextWidth(it.groupName)) / 2, bottom, signFont,
                 randomTextPaint(currStart.toInt()))
 
+            // draw value
             canvas.drawString(it.value.toString(), currStart + (barWidth - signFont.measureTextWidth(it.value.toString())) / 2, bottom - signFont.size - smallIndent - k * it.value, signFont,
                 randomTextPaint(currStart.toInt()))
 
@@ -187,9 +198,64 @@ class Renderer(val layer: SkiaLayer, val chartInfo: ChartData): SkiaRenderer {
             val deltaAng = it.value * 360f / sum
 
             drawSector(currStart, deltaAng)
-            drawSign(currStart, deltaAng, it.group_name!!, it.value.toString())
+            drawSign(currStart, deltaAng, it.groupName, it.value.toString())
 
             currStart += deltaAng
+        }
+    }
+
+    private fun drawScatterPlot(canvas: Canvas, width: Float, height: Float) {
+
+        val blackColor = 0xff000000L.toInt()
+        val blackTextPaint = Paint().apply { color = blackColor; mode = PaintMode.STROKE_AND_FILL }
+        val axePaint = Paint().apply { color = blackColor; mode = PaintMode.STROKE_AND_FILL; strokeWidth = 2f}
+        val pointPaint = Paint(). apply { color = 0xFFFF0000L.toInt(); mode = PaintMode.STROKE_AND_FILL }
+
+        val smallIndent = 10f
+        val radius = 3f
+
+        val left = smallIndent
+        val right = width - smallIndent
+        val top = smallIndent
+        val bottom = height - smallIndent
+
+        val xMax = max(0, chartInfo.data.maxOf { it.x })
+        val xMin = min(0, chartInfo.data.minOf { it.x })
+        val yMax = max(0, chartInfo.data.maxOf { it.value })
+        val yMin = min(0, chartInfo.data.minOf { it.value })
+
+        val xCenter = (left * xMax + right * (-xMin)) / (xMax - xMin)
+        val yCenter = (bottom * yMax + top * (-yMin)) / (yMax - yMin)
+        val xK = (right - left) / (xMax - xMin)
+        val yK = (bottom - top) / (yMax - yMin)
+
+        // draw axes
+        canvas.drawLine(xCenter, top, xCenter, bottom, axePaint)
+        canvas.drawLine(left, yCenter, right,  yCenter, axePaint)
+        canvas.drawLine(xCenter, top, xCenter - 5, top + 10, axePaint)
+        canvas.drawLine(xCenter, top, xCenter + 5, top + 10, axePaint)
+        canvas.drawLine(right,  yCenter, right - 10,  yCenter - 5, axePaint)
+        canvas.drawLine(right,  yCenter, right - 10,  yCenter + 5, axePaint)
+
+        // draw marks
+        canvas.drawString("0", xCenter - signFont.measureTextWidth("0"), yCenter + signFont.size, signFont, blackTextPaint)
+        val maxC = maxOf(xMax, yMax, -xMin, -yMin)
+        var curr = 1
+        while (curr <= maxC) {
+            val s = curr.toString()
+            if (curr <= xMax) canvas.drawString(s, xCenter + curr * xK - signFont.measureTextWidth(s), yCenter + signFont.size, signFont, blackTextPaint)
+            if (curr <= yMax) canvas.drawString(s, xCenter - signFont.measureTextWidth(s), yCenter - curr * yK + signFont.size, signFont, blackTextPaint)
+
+            val opS = (-curr).toString()
+            if (curr <= -xMin) canvas.drawString(opS, xCenter - curr * xK - signFont.measureTextWidth(opS), yCenter + signFont.size, signFont, blackTextPaint)
+            if (curr <= -yMin) canvas.drawString(opS, xCenter - signFont.measureTextWidth(opS), yCenter + curr * yK + signFont.size, signFont, blackTextPaint)
+
+            curr *= 10
+        }
+
+        // draw points
+        chartInfo.data.forEach {
+            canvas.drawCircle(xCenter + it.x.toFloat() * xK, yCenter - it.value.toFloat() * yK, radius, pointPaint)
         }
     }
 }

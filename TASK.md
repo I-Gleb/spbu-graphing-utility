@@ -1,14 +1,11 @@
-# Постановка задачи
+# Task definition
 
-В этом проекте требуется реализовать программу для рисования распространённых типов диаграмм (круговые диаграммы,
-гистограммы, диаграммы рассеяния и др.). На вход программе должны подаваться требуемый тип диаграммы, данные в
-соответствующем формате (включающем как собственно данные, так и названия для компонентов диаграммы) 
-и имя PNG-файла для сохранения результата. Программа должна рисовать диаграмму в графическом окне 
-и сохранять результат в файл.
+In this project it is required to implement a program for drawing common types of charts (pie charts,
+histograms, scatterplots, etc.). The input to the program must be the required type of diagram, given in
+appropriate format (including both the data itself and the names for the chart components)
+and the name of the PNG file to save the result. The program should draw the chart in the graphics window
+and save the result to a file.
 
-Требуется самостоятельно разработать и описать пользовательский 
-интерфейс программы, форматы входных и выходных данных, организовать тестирование, 
-предоставить наборы файлов для проверки корректности реализации и продемонстрировать примеры работы. 
-Разработка должна вестись регулярно, история коммитов должна отражать 
-процесс разработки, сообщения коммитов рекомендуется писать на английском языке 
-(но сообщения на русском языке также допускаются).
+It is required to independently develop and describe a custom
+program interface, input and output data formats, organize testing,
+provide sets of files to check the correctness of the implementation and demonstrate examples of work.

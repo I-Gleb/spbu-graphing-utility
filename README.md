@@ -1,23 +1,23 @@
-# Курс основ программирования на МКН СПбГУ
-## Проект 3: визуализация данных
+# Data visualization
+## Project made for programming basics course at Department of Mathematics and Computer Science, St. Petersburg State University
 
-[Постановка задачи](./TASK.md)
+[Task definition](./TASK.md)
 
-### Документация
+### Documentation
 
-Данная консольная утилита создаёт диаграммы и графики на основе данных, передоставленных пользователем ввиде файла, показывает в отдельном окне и сохраняет их в формате png.
+This console utility creates charts and graphs based on data provided by the user as a file, displays them in a separate window and saves them in png format.
 
-#### Поддерживаемые типы диаграм
+#### Supported chart types
 
-* BarChart - столбчатая диаграмма
-* PieChart - круговая диаграмма
-* ScatterPlot - точечное распределение
+* BarChart - bar chart
+* PieChart - pie chart
+* ScatterPlot - point distribution
 
-#### Формат входных данных
+#### Input data format
 
-На вход программе нужно через пробел передать тип диаграммы(в любом регистре), имя файла с данными, в котором в отдельных строках хранятся значения в формате "имя:значение"(для *ScatterPlot* имя - это координата *x*), и имя файла, в который надо сохранить диаграмму.
-Если файла, в который надо сохранить, не существует, то он создастся.
+As an input utility takes following values separated by a space: the chart type (in any case), the name of the data file, in which the values are stored in separate lines in format "name:value" (for *ScatterPlot*, the name is the *x* coordinate), and the name of output file.
+If output file does not exist, it will be created.
 
-##### Пример
+##### Example
 
-    $vis pieChart data.txt output.png
+     $vis pieChart data.txt output.png
